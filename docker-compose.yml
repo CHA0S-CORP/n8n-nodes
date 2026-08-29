@@ -1,0 +1,23 @@
+# Quick local n8n with all nodes baked in.
+#
+#   docker compose up --build       # rebuild image after changing node code
+#   open http://localhost:5678       # create a local owner account on first run
+#
+# Data (workflows, credentials) persists in the n8n_data volume across restarts.
+services:
+  n8n:
+    build: .
+    image: n8n-chaos:local
+    container_name: n8n-chaos
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_SECURE_COOKIE=false
+      - N8N_DIAGNOSTICS_ENABLED=false
+      - N8N_RUNNERS_ENABLED=true
+      # N8N_CUSTOM_EXTENSIONS is already set inside the image; the nodes load automatically.
+    volumes:
+      - n8n_data:/home/node/.n8n
+
+volumes:
+  n8n_data:

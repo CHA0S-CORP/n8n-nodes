@@ -1,0 +1,58 @@
+{
+  "name": "n8n-nodes-rpitx",
+  "version": "0.1.0",
+  "description": "n8n community node for controlling an Rpitx dashboard",
+  "keywords": [
+    "n8n-community-node-package",
+    "rpitx",
+    "sdr",
+    "radio"
+  ],
+  "license": "MIT",
+  "author": "CHA0S-CORP",
+  "homepage": "https://github.com/CHA0S-CORP/n8n-nodes/tree/main/packages/n8n-nodes-rpitx",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CHA0S-CORP/n8n-nodes.git",
+    "directory": "packages/n8n-nodes-rpitx"
+  },
+  "bugs": {
+    "url": "https://github.com/CHA0S-CORP/n8n-nodes/issues"
+  },
+  "engines": {
+    "node": ">=18.10"
+  },
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc && node ../../scripts/copy-icons.js",
+    "dev": "tsc --watch",
+    "format": "prettier nodes credentials --write",
+    "lint": "eslint nodes credentials",
+    "lintfix": "eslint nodes credentials --fix",
+    "prepublishOnly": "npm run build && npm run lint"
+  },
+  "files": [
+    "dist"
+  ],
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "credentials": [
+      "dist/credentials/RpitxApi.credentials.js"
+    ],
+    "nodes": [
+      "dist/nodes/Rpitx/Rpitx.node.js"
+    ]
+  },
+  "peerDependencies": {
+    "n8n-workflow": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@typescript-eslint/parser": "^7.15.0",
+    "eslint": "^8.57.0",
+    "eslint-plugin-n8n-nodes-base": "^1.16.3",
+    "n8n-workflow": "*",
+    "prettier": "^3.3.2",
+    "typescript": "^5.5.3"
+  }
+}

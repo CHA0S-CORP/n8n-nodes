@@ -1,62 +1,43 @@
-# n8n-nodes-govee
+# CHA0S-CORP n8n nodes
 
-An [n8n](https://n8n.io) community node to control **Govee LED devices** through three
-transports, selectable per node execution:
+Monorepo of [n8n](https://n8n.io) community node packages. Each package under
+`packages/` is independently versioned and publishable.
 
-| Connection | Auth | Notes |
-|---|---|---|
-| **Cloud API** | Govee developer API key | Official, documented, reliable. Recommended. |
-| **LAN (UDP)** | none | Local control. Requires *LAN Control* enabled and n8n on the same subnet. |
-| **App IoT (MQTT)** | Govee account email/password | Undocumented app channel via AWS IoT. May break without notice. |
+| Package | What it does |
+|---|---|
+| [`n8n-nodes-govee`](packages/n8n-nodes-govee) | Control Govee LEDs via Cloud API, LAN UDP, or the app AWS IoT (MQTT) channel. Includes an ordered *Run Actions* batch operation. |
+| [`n8n-nodes-rpitx`](packages/n8n-nodes-rpitx) | Control an Rpitx dashboard. |
 
-## Operations
+## Development
 
-Get Devices · Get State · Set Power · Set Brightness · Set Color (RGB) ·
-Set Color Temperature · Set Scene *(Cloud only)* · Raw Command.
-
-Devices are chosen from a searchable dropdown (populated from the active connection)
-or entered by ID (MAC-style string for Cloud/IoT, IP address for LAN).
-
-## Credentials
-
-- **Govee API** — API key. Request it in the Govee Home app: *Profile → About Us → Apply for API Key*.
-- **Govee App Account** — the email/password of your Govee Home login. Used only for the
-  IoT connection. The node logs in, fetches an AWS IoT mTLS certificate, and caches it
-  in memory (per process, 24 h) to avoid repeated logins, which Govee rate-limits.
-
-## Install
-
-Community nodes: **Settings → Community Nodes → Install** `n8n-nodes-govee`.
-
-### Local development
+Uses npm workspaces.
 
 ```bash
-npm install
-npm run build      # tsc + copy icons
-npm run lint
-npm link
-mkdir -p ~/.n8n/custom && (cd ~/.n8n/custom && npm link n8n-nodes-govee)
-npx n8n start      # the "Govee" node appears in the editor
+npm install            # installs all packages (deps hoisted to root)
+npm run build          # build every package
+npm run lint           # lint every package
+
+# work on a single package
+npm run build -w n8n-nodes-govee
 ```
 
-Use `npm run dev` (tsc watch) and restart n8n to iterate.
+### Loading into a local n8n
 
-## Raw Command payloads
+Easiest — build the baked image and run it with Docker Compose:
 
-- **Cloud**: a capability object — `{"type":"devices.capabilities.on_off","instance":"powerSwitch","value":1}`
-- **LAN**: `{"cmd":"turn","data":{"value":1}}`
-- **IoT**: `{"cmd":"turn","data":{"val":1}}`
+```bash
+docker compose up --build       # rebuild after changing node code
+# open http://localhost:5678
+```
 
-## Caveats & limits
+Or point a local n8n at the built package directories:
 
-- **Cloud** rate limits: 10 requests/minute per device, 10 000/day. A 429 surfaces a clear error.
-- **LAN** needs *LAN Control* toggled on in the Govee Home app, the device on the same
-  L2 subnet as n8n (multicast `239.255.255.250`, UDP 4001/4002/4003), and is only
-  supported on some SKUs. `Get State` times out after 3 s if no reply.
-- **IoT** is a reverse-engineered channel and can break when Govee updates their app API.
-  `Get State` publishes a status request but does not block on the async reply. In n8n
-  queue mode, each worker maintains its own certificate cache (extra logins).
+```bash
+npm run build
+export N8N_CUSTOM_EXTENSIONS="$PWD/packages/n8n-nodes-govee:$PWD/packages/n8n-nodes-rpitx"
+n8n start
+```
 
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE).
