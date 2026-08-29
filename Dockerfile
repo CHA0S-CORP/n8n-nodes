@@ -19,10 +19,12 @@ COPY --from=build /repo/packages/n8n-nodes-rpitx/package.json /opt/nodes/n8n-nod
 COPY --from=build /repo/packages/n8n-nodes-general-disarray/dist         /opt/nodes/n8n-nodes-general-disarray/dist
 COPY --from=build /repo/packages/n8n-nodes-general-disarray/package.json /opt/nodes/n8n-nodes-general-disarray/package.json
 
-# Install each package's production runtime deps (n8n-workflow is a peer, provided by n8n).
-RUN cd /opt/nodes/n8n-nodes-govee && npm install --omit=dev --ignore-scripts --no-package-lock \
-	&& cd /opt/nodes/n8n-nodes-rpitx && npm install --omit=dev --ignore-scripts --no-package-lock \
-	&& cd /opt/nodes/n8n-nodes-general-disarray && npm install --omit=dev --ignore-scripts --no-package-lock \
+# Install each package's production runtime deps. --omit=peer is critical: without
+# it npm would install n8n-workflow into the package, duplicating n8n's own copy and
+# breaking instanceof checks / shared registries at runtime.
+RUN cd /opt/nodes/n8n-nodes-govee && npm install --omit=dev --omit=peer --ignore-scripts --no-package-lock \
+	&& cd /opt/nodes/n8n-nodes-rpitx && npm install --omit=dev --omit=peer --ignore-scripts --no-package-lock \
+	&& cd /opt/nodes/n8n-nodes-general-disarray && npm install --omit=dev --omit=peer --ignore-scripts --no-package-lock \
 	&& chown -R node:node /opt/nodes
 
 USER node

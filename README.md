@@ -14,9 +14,11 @@ Monorepo of [n8n](https://n8n.io) community node packages. Each package under
 Uses npm workspaces.
 
 ```bash
-npm install            # installs all packages (deps hoisted to root)
-npm run build          # build every package
-npm run lint           # lint every package
+# --ignore-scripts skips n8n-workflow's isolated-vm native build, which fails on
+# newer Node and isn't needed — we only consume its TypeScript types.
+npm install --ignore-scripts   # installs all packages (deps hoisted to root)
+npm run build                  # build every package
+npm run lint                   # lint every package
 
 # work on a single package
 npm run build -w n8n-nodes-govee

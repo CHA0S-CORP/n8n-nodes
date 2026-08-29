@@ -26,13 +26,9 @@ module.exports = {
 			plugins: ['eslint-plugin-n8n-nodes-base'],
 			extends: ['plugin:n8n-nodes-base/credentials'],
 			rules: {
-				// GoveeApp holds an account login (email/password), not an API key,
-				// so the "-Api" suffix conventions do not apply.
-				'n8n-nodes-base/cred-class-name-unsuffixed': 'off',
-				'n8n-nodes-base/cred-class-field-name-unsuffixed': 'off',
-				'n8n-nodes-base/cred-class-field-display-name-missing-api': 'off',
-				// Conflicts with cred-class-field-documentation-url-not-http-url:
-				// its autofix camelCases the real https URL, breaking it.
+				// This rule's autofix camelCases the real https documentationUrl, which
+				// then trips cred-class-field-documentation-url-not-http-url. Leave the
+				// URL as a valid URL.
 				'n8n-nodes-base/cred-class-field-documentation-url-miscased': 'off',
 			},
 		},
@@ -40,12 +36,6 @@ module.exports = {
 			files: ['./nodes/**/*.ts'],
 			plugins: ['eslint-plugin-n8n-nodes-base'],
 			extends: ['plugin:n8n-nodes-base/nodes'],
-			rules: {
-				'n8n-nodes-base/node-class-description-credentials-name-unsuffixed': 'off',
-				// Keep the "Type" selector first in the action collection; alphabetizing
-				// would push it to the bottom and hurt the form's usability.
-				'n8n-nodes-base/node-param-fixed-collection-type-unsorted-items': 'off',
-			},
 		},
 	],
 };
