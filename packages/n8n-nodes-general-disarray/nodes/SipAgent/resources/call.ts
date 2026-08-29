@@ -125,8 +125,7 @@ export const callProperties: INodeProperties[] = [
 		type: 'string',
 		default: '',
 		placeholder: '1001',
-		description:
-			'Caller id whose stored PIN/OTP credentials are checked (the user part of the SIP URI). Optional when you supply an inline PIN/TOTP Secret and an Extension — then it defaults to the Extension. Either Caller ID or Extension is required.',
+		description: 'Caller ID whose stored PIN/OTP credentials are checked (the user part of the SIP URI). Optional when you supply an inline PIN/TOTP Secret and an Extension — then it defaults to the Extension. Either Caller ID or Extension is required.',
 		displayOptions: { show: { resource: ['call'], operation: ['verify'] } },
 	},
 	{

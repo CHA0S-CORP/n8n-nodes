@@ -198,11 +198,11 @@ export const scheduleProperties: INodeProperties[] = [
 				name: 'recurring',
 				type: 'options',
 				options: [
-					{ name: 'None', value: '' },
+					{ name: 'Cron Expression', value: 'cron' },
 					{ name: 'Daily', value: 'daily' },
+					{ name: 'None', value: '' },
 					{ name: 'Weekdays', value: 'weekdays' },
 					{ name: 'Weekends', value: 'weekends' },
-					{ name: 'Cron Expression', value: 'cron' },
 				],
 				default: '',
 				description: 'Repeat the call on a schedule instead of firing once',

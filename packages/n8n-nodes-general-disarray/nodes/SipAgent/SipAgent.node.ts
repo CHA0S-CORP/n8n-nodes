@@ -5,7 +5,7 @@ import type {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
+import { NodeOperationError } from 'n8n-workflow';
 
 import { callProperties, executeCall } from './resources/call';
 import { scheduleProperties, executeSchedule } from './resources/schedule';
@@ -28,8 +28,8 @@ export class SipAgent implements INodeType {
 			name: 'SIP Agent',
 		},
 		usableAsTool: true,
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: ['main'],
+		outputs: ['main'],
 		credentials: [
 			{
 				name: 'sipAgentApi',

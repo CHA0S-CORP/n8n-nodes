@@ -1,17 +1,41 @@
 {
   "name": "n8n-nodes-general-disarray",
   "version": "0.1.0",
-  "description": "n8n nodes for the General Disarray SIP AI phone assistant",
-  "license": "AGPL-3.0",
+  "description": "n8n community nodes for the General Disarray SIP AI phone assistant",
   "keywords": [
-    "n8n-community-node-package"
+    "n8n-community-node-package",
+    "sip",
+    "voip",
+    "phone",
+    "ai",
+    "general-disarray"
   ],
+  "license": "AGPL-3.0",
+  "author": "CHA0S-CORP",
+  "homepage": "https://github.com/CHA0S-CORP/n8n-nodes/tree/main/packages/n8n-nodes-general-disarray",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CHA0S-CORP/n8n-nodes.git",
+    "directory": "packages/n8n-nodes-general-disarray"
+  },
+  "bugs": {
+    "url": "https://github.com/CHA0S-CORP/n8n-nodes/issues"
+  },
+  "engines": {
+    "node": ">=18.10"
+  },
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc && node ../../scripts/copy-icons.js",
+    "dev": "tsc --watch",
+    "format": "prettier nodes credentials --write",
+    "lint": "eslint nodes credentials",
+    "lintfix": "eslint nodes credentials --fix",
+    "prepublishOnly": "npm run build && npm run lint"
+  },
   "files": [
     "dist"
   ],
-  "scripts": {
-    "build": "tsc && cp nodes/SipAgent/*.svg dist/nodes/SipAgent/ && cp nodes/SipAgentTrigger/*.svg dist/nodes/SipAgentTrigger/"
-  },
   "n8n": {
     "n8nNodesApiVersion": 1,
     "credentials": [
@@ -27,7 +51,11 @@
   },
   "devDependencies": {
     "@types/node": "^20.14.0",
-    "n8n-workflow": "^1.82.0",
-    "typescript": "^5.6.0"
+    "@typescript-eslint/parser": "^7.15.0",
+    "eslint": "^8.57.0",
+    "eslint-plugin-n8n-nodes-base": "^1.16.3",
+    "n8n-workflow": "*",
+    "prettier": "^3.3.2",
+    "typescript": "^5.5.3"
   }
 }

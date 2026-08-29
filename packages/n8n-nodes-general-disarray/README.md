@@ -8,25 +8,34 @@ The package ships two nodes plus one credential type:
 - **SIP Agent Trigger** — starts a workflow from a phone call. In **Trigger Number** mode it registers a phone extension on the agent for as long as the workflow is active; a call to that number kicks the workflow off (optionally with what the caller said). In **Webhook** mode it passively receives the agent's **call-lifecycle events** (`call.started` / `call.ended`) and **choice-callback** POSTs. Both modes support optional HMAC-SHA256 signature verification.
 - **SIP Agent API** credential — base URL, optional API token, and the webhook signing secret.
 
+This package lives in the [CHA0S-CORP/n8n-nodes](https://github.com/CHA0S-CORP/n8n-nodes) monorepo and is vendored into the [General Disarray](https://github.com/CHA0S-CORP/general-disarray) repo as the `examples/n8n-nodes` git submodule.
+
 ## Build
 
-No local Node.js toolchain required — the build runs inside a `node:20-alpine` container and works on arm64 (DGX Spark / GB10):
+With a local Node toolchain, from the monorepo root:
 
 ```bash
-cd examples/n8n-nodes-general-disarray
-./build.sh
+npm install --ignore-scripts
+npm run build -w n8n-nodes-general-disarray
 ```
 
-Requires only Docker. Compiled output lands in `dist/` (owned by your host user), which is what gets mounted into n8n. Re-run `./build.sh` after any source change.
-
-## Install into this stack
-
-The compose files are **already wired**: both `docker-compose.yml` and `docker-compose.dgx.yml` set `N8N_CUSTOM_EXTENSIONS=/custom-nodes` on the n8n service and mount `./examples/n8n-nodes-general-disarray/dist` read-only at `/custom-nodes/n8n-nodes-general-disarray`. (Only `dist/` is mounted on purpose — mounting the package root would let n8n's `**/*.node.js` glob sweep `node_modules`.)
-
-So installation is just: build, then (re)create the n8n container so it picks the nodes up.
+Or with Docker only (works on arm64 / DGX Spark / GB10):
 
 ```bash
-cd examples/n8n-nodes-general-disarray && ./build.sh && cd ../..
+packages/n8n-nodes-general-disarray/build.sh
+```
+
+Compiled output lands in this package's `dist/` (owned by your host user), which is what gets mounted into n8n. Re-run the build after any source change.
+
+## Install into the General Disarray stack
+
+In the General Disarray repo the compose files are **already wired**: both `docker-compose.yml` and `docker-compose.dgx.yml` set `N8N_CUSTOM_EXTENSIONS=/custom-nodes` on the n8n service and mount `./examples/n8n-nodes/packages/n8n-nodes-general-disarray/dist` read-only at `/custom-nodes/n8n-nodes-general-disarray`. (Only `dist/` is mounted on purpose — mounting the package root would let n8n's `**/*.node.js` glob sweep `node_modules`.)
+
+So installation is just: init the submodule, build, then (re)create the n8n container so it picks the nodes up.
+
+```bash
+git submodule update --init examples/n8n-nodes
+examples/n8n-nodes/packages/n8n-nodes-general-disarray/build.sh
 
 # DGX Spark stack:
 docker compose -f docker-compose.dgx.yml up -d n8n

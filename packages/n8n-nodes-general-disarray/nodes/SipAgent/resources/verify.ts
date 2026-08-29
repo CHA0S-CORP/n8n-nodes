@@ -12,16 +12,10 @@ export const verifyProperties: INodeProperties[] = [
 		displayOptions: { show: { resource: ['verify'] } },
 		options: [
 			{
-				name: 'Verify Code',
-				value: 'verify',
-				description: 'Check a caller\'s PIN and/or one-time code out-of-band',
-				action: 'Verify a code',
-			},
-			{
-				name: 'Set Credentials',
-				value: 'setCredentials',
-				description: 'Enroll or update a caller\'s PIN and/or TOTP secret',
-				action: 'Set caller credentials',
+				name: 'Delete Credentials',
+				value: 'deleteCredentials',
+				description: 'Remove a caller\'s enrolled credentials',
+				action: 'Delete caller credentials',
 			},
 			{
 				name: 'Get Credentials',
@@ -30,16 +24,22 @@ export const verifyProperties: INodeProperties[] = [
 				action: 'Get caller credentials',
 			},
 			{
-				name: 'Delete Credentials',
-				value: 'deleteCredentials',
-				description: 'Remove a caller\'s enrolled credentials',
-				action: 'Delete caller credentials',
-			},
-			{
 				name: 'Get Current OTP',
 				value: 'getOtp',
 				description: 'Get the caller\'s current TOTP code (for delivery/testing)',
 				action: 'Get current OTP',
+			},
+			{
+				name: 'Set Credentials',
+				value: 'setCredentials',
+				description: 'Enroll or update a caller\'s PIN and/or TOTP secret',
+				action: 'Set caller credentials',
+			},
+			{
+				name: 'Verify Code',
+				value: 'verify',
+				description: 'Check a caller\'s PIN and/or one-time code out-of-band',
+				action: 'Verify a code',
 			},
 		],
 		default: 'verify',
@@ -52,8 +52,7 @@ export const verifyProperties: INodeProperties[] = [
 		type: 'string',
 		required: true,
 		default: '',
-		description:
-			'Caller id (the user part of the SIP URI, e.g. "1001"). For Get Current OTP, the reserved id "global" returns the code for the global VERIFY_TOTP_SECRET.',
+		description: 'Caller ID (the user part of the SIP URI, e.g. "1001"). For Get Current OTP, the reserved ID "global" returns the code for the global VERIFY_TOTP_SECRET.',
 		displayOptions: { show: { resource: ['verify'] } },
 	},
 

@@ -8,7 +8,7 @@ import type {
 	IWebhookFunctions,
 	IWebhookResponseData,
 } from 'n8n-workflow';
-import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
+import { NodeOperationError } from 'n8n-workflow';
 
 import { sipAgentApiRequest } from '../SipAgent/GenericFunctions';
 
@@ -30,7 +30,7 @@ export class SipAgentTrigger implements INodeType {
 			name: 'SIP Agent Trigger',
 		},
 		inputs: [],
-		outputs: [NodeConnectionTypes.Main],
+		outputs: ['main'],
 		credentials: [
 			{
 				name: 'sipAgentApi',
@@ -115,8 +115,7 @@ export class SipAgentTrigger implements INodeType {
 					},
 				],
 				default: ['answered'],
-				description:
-					'Which moments of a call to this number start the workflow. Branch on {{$json.event}} (virtual_number.answered / .first_speech / .speech / .completed) when several are selected.',
+				description: 'Which moments of a call to this number start the workflow. Branch on {{$json.event}} (virtual_number.answered / .first_speech / .speech / .completed) when several are selected.',
 				displayOptions: { show: { mode: ['triggerNumber'] } },
 			},
 			{

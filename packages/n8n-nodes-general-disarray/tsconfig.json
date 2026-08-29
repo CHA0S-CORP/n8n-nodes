@@ -3,15 +3,24 @@
     "strict": true,
     "module": "commonjs",
     "moduleResolution": "node",
-    "target": "es2021",
-    "lib": ["es2021"],
-    "outDir": "dist",
-    "rootDir": ".",
-    "declaration": false,
-    "sourceMap": false,
+    "target": "es2019",
+    "lib": ["es2019", "es2020", "es2022.error"],
+    "removeComments": true,
+    "useUnknownInCatchVariables": false,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "strictNullChecks": true,
+    "preserveConstEnums": true,
     "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "incremental": true,
+    "declaration": true,
+    "sourceMap": true,
     "skipLibCheck": true,
-    "useUnknownInCatchVariables": false
+    "outDir": "./dist/"
   },
-  "include": ["credentials/**/*.ts", "nodes/**/*.ts"]
+  "include": ["credentials/**/*", "nodes/**/*"],
+  "exclude": ["node_modules", "dist"]
 }
