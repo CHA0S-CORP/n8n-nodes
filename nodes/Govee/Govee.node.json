@@ -1,0 +1,18 @@
+{
+	"node": "n8n-nodes-base.govee",
+	"nodeVersion": "1.0",
+	"codexVersion": "1.0",
+	"categories": ["Utility"],
+	"resources": {
+		"credentialDocumentation": [
+			{
+				"url": "https://developer.govee.com/reference/apply-you-govee-api-key"
+			}
+		],
+		"primaryDocumentation": [
+			{
+				"url": "https://developer.govee.com/reference/get-you-devices"
+			}
+		]
+	}
+}

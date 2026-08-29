@@ -1,0 +1,10 @@
+node_modules/
+dist/
+*.tsbuildinfo
+.env
+npm-debug.log*
+.DS_Store
+
+# local test secrets
+.creds-import.json
+*.creds.json

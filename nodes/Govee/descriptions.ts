@@ -1,0 +1,243 @@
+import type { INodeProperties } from 'n8n-workflow';
+
+export const goveeProperties: INodeProperties[] = [
+	{
+		displayName: 'Connection',
+		name: 'connection',
+		type: 'options',
+		noDataExpression: true,
+		default: 'cloud',
+		options: [
+			{
+				name: 'Cloud API',
+				value: 'cloud',
+				description: 'Official Govee developer REST API (needs an API key)',
+			},
+			{
+				name: 'LAN (UDP)',
+				value: 'lan',
+				description: 'Local control over UDP. Requires LAN Control enabled and same subnet.',
+			},
+			{
+				name: 'App IoT (MQTT)',
+				value: 'iot',
+				description: 'Undocumented Govee app channel via AWS IoT (email/password)',
+			},
+		],
+	},
+	{
+		displayName: 'Operation',
+		name: 'operation',
+		type: 'options',
+		noDataExpression: true,
+		default: 'setPower',
+		options: [
+			{ name: 'Get Devices', value: 'getDevices', action: 'Get devices' },
+			{ name: 'Get State', value: 'getState', action: 'Get device state' },
+			{ name: 'Raw Command', value: 'rawCommand', action: 'Send a raw command' },
+			{
+				name: 'Run Actions',
+				value: 'runActions',
+				action: 'Run several actions in sequence',
+			},
+			{ name: 'Set Brightness', value: 'setBrightness', action: 'Set brightness' },
+			{ name: 'Set Color', value: 'setColor', action: 'Set RGB color' },
+			{ name: 'Set Color Temperature', value: 'setColorTemp', action: 'Set color temperature' },
+			{ name: 'Set Power', value: 'setPower', action: 'Turn a device on or off' },
+			{ name: 'Set Scene', value: 'setScene', action: 'Set a dynamic scene' },
+		],
+	},
+	{
+		displayName: 'Device',
+		name: 'device',
+		type: 'resourceLocator',
+		default: { mode: 'list', value: '' },
+		required: true,
+		description: 'The Govee device to control',
+		displayOptions: {
+			hide: { operation: ['getDevices'] },
+		},
+		modes: [
+			{
+				displayName: 'From List',
+				name: 'list',
+				type: 'list',
+				typeOptions: {
+					searchListMethod: 'searchDevices',
+					searchable: true,
+				},
+			},
+			{
+				displayName: 'By ID',
+				name: 'id',
+				type: 'string',
+				placeholder: 'AB:CD:EF:... (cloud/iot) or 192.168.1.50 (LAN)',
+			},
+		],
+	},
+	{
+		displayName: 'SKU',
+		name: 'sku',
+		type: 'string',
+		default: '',
+		description:
+			'Device model (e.g. H6159). Required when the device is entered by ID for the Cloud API.',
+		displayOptions: {
+			show: { connection: ['cloud'] },
+			hide: { operation: ['getDevices'] },
+		},
+	},
+	{
+		displayName: 'State',
+		name: 'powerState',
+		type: 'options',
+		default: 'on',
+		options: [
+			{ name: 'On', value: 'on' },
+			{ name: 'Off', value: 'off' },
+		],
+		displayOptions: { show: { operation: ['setPower'] } },
+	},
+	{
+		displayName: 'Brightness',
+		name: 'brightness',
+		type: 'number',
+		typeOptions: { minValue: 1, maxValue: 100 },
+		default: 100,
+		description: 'Brightness percentage (1-100)',
+		displayOptions: { show: { operation: ['setBrightness'] } },
+	},
+	{
+		displayName: 'Color',
+		name: 'color',
+		type: 'color',
+		default: '#ff0000',
+		description: 'RGB color as "#rrggbb" or "r,g,b"',
+		displayOptions: { show: { operation: ['setColor'] } },
+	},
+	{
+		displayName: 'Color Temperature (K)',
+		name: 'colorTemp',
+		type: 'number',
+		typeOptions: { minValue: 2000, maxValue: 9000 },
+		default: 4000,
+		description: 'White color temperature in Kelvin (2000-9000)',
+		displayOptions: { show: { operation: ['setColorTemp'] } },
+	},
+	{
+		displayName: 'Scene',
+		name: 'scene',
+		type: 'resourceLocator',
+		default: { mode: 'list', value: '' },
+		description: 'Dynamic scene (Cloud API only)',
+		displayOptions: {
+			show: { operation: ['setScene'], connection: ['cloud'] },
+		},
+		modes: [
+			{
+				displayName: 'From List',
+				name: 'list',
+				type: 'list',
+				typeOptions: {
+					searchListMethod: 'searchScenes',
+					searchable: true,
+				},
+			},
+			{
+				displayName: 'By Value',
+				name: 'id',
+				type: 'string',
+			},
+		],
+	},
+	{
+		displayName: 'Payload',
+		name: 'rawPayload',
+		type: 'json',
+		default: '{}',
+		description:
+			'Cloud: a capability object {type, instance, value}. LAN/IoT: {cmd, data}.',
+		displayOptions: { show: { operation: ['rawCommand'] } },
+	},
+	{
+		displayName: 'Actions',
+		name: 'actions',
+		type: 'fixedCollection',
+		typeOptions: { multipleValues: true, sortable: true },
+		default: {},
+		placeholder: 'Add Action',
+		description: 'Actions applied to the device in the order listed',
+		displayOptions: { show: { operation: ['runActions'] } },
+		options: [
+			{
+				name: 'action',
+				displayName: 'Action',
+				values: [
+					{
+						displayName: 'Type',
+						name: 'type',
+						type: 'options',
+						default: 'power',
+						options: [
+							{ name: 'Brightness', value: 'brightness' },
+							{ name: 'Color (RGB)', value: 'color' },
+							{ name: 'Color Temperature', value: 'colorTemp' },
+							{ name: 'Power', value: 'power' },
+							{ name: 'Scene (Cloud Only)', value: 'scene' },
+						],
+					},
+					{
+						displayName: 'State',
+						name: 'powerState',
+						type: 'options',
+						default: 'on',
+						options: [
+							{ name: 'On', value: 'on' },
+							{ name: 'Off', value: 'off' },
+						],
+						displayOptions: { show: { type: ['power'] } },
+					},
+					{
+						displayName: 'Brightness',
+						name: 'brightness',
+						type: 'number',
+						typeOptions: { minValue: 1, maxValue: 100 },
+						default: 100,
+						displayOptions: { show: { type: ['brightness'] } },
+					},
+					{
+						displayName: 'Color',
+						name: 'color',
+						type: 'color',
+						default: '#ff0000',
+						displayOptions: { show: { type: ['color'] } },
+					},
+					{
+						displayName: 'Color Temperature (K)',
+						name: 'colorTemp',
+						type: 'number',
+						typeOptions: { minValue: 2000, maxValue: 9000 },
+						default: 4000,
+						displayOptions: { show: { type: ['colorTemp'] } },
+					},
+					{
+						displayName: 'Scene Value',
+						name: 'sceneValue',
+						type: 'string',
+						default: '',
+						description: 'Scene value object copied from a Set Scene run',
+						displayOptions: { show: { type: ['scene'] } },
+					},
+				],
+			},
+		],
+	},
+	{
+		displayName: 'Delay Between Actions (Ms)',
+		name: 'actionDelay',
+		type: 'number',
+		default: 300,
+		description: 'Pause between each action. Some devices need spacing to apply every step.',
+		displayOptions: { show: { operation: ['runActions'] } },
+	},
+];
