@@ -7,6 +7,7 @@ Monorepo of [n8n](https://n8n.io) community node packages. Each package under
 |---|---|
 | [`n8n-nodes-govee`](packages/n8n-nodes-govee) | Control Govee LEDs via Cloud API, LAN UDP, or the app AWS IoT (MQTT) channel. Includes an ordered *Run Actions* batch operation. |
 | [`n8n-nodes-rpitx`](packages/n8n-nodes-rpitx) | Control an Rpitx dashboard. |
+| [`n8n-nodes-general-disarray`](packages/n8n-nodes-general-disarray) | Drive the [General Disarray](https://github.com/CHA0S-CORP/general-disarray) SIP AI phone assistant: place calls, collect choices, speak, run tools, schedule, virtual numbers, plus a webhook trigger for call events. (AGPL-3.0) |
 
 ## Development
 
@@ -34,10 +35,10 @@ Or point a local n8n at the built package directories:
 
 ```bash
 npm run build
-export N8N_CUSTOM_EXTENSIONS="$PWD/packages/n8n-nodes-govee:$PWD/packages/n8n-nodes-rpitx"
+export N8N_CUSTOM_EXTENSIONS="$PWD/packages/n8n-nodes-govee:$PWD/packages/n8n-nodes-rpitx:$PWD/packages/n8n-nodes-general-disarray"
 n8n start
 ```
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT — see [LICENSE](LICENSE). Exception: `n8n-nodes-general-disarray` is AGPL-3.0, matching the General Disarray project it was extracted from (see its `package.json`).
