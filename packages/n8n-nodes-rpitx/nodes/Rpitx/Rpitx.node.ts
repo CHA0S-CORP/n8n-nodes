@@ -36,7 +36,14 @@ async function uploadBinary(
 		},
 		json: true,
 	})) as IDataObject;
-	return res.path as string;
+	const uploadedPath = (res.path ?? res.file ?? res.filename) as string | undefined;
+	if (typeof uploadedPath !== 'string' || uploadedPath === '') {
+		throw new NodeOperationError(
+			ctx.getNode(),
+			`Upload succeeded but the response had no file path: ${JSON.stringify(res)}`,
+		);
+	}
+	return uploadedPath;
 }
 
 export class Rpitx implements INodeType {
@@ -60,11 +67,10 @@ export class Rpitx implements INodeType {
 		const items = this.getInputData();
 		const returnData: INodeExecutionData[] = [];
 
-		const creds = await this.getCredentials('rpitxApi');
-		const baseUrl = (creds.baseUrl as string).replace(/\/+$/, '');
-
 		for (let i = 0; i < items.length; i++) {
 			try {
+				const creds = await this.getCredentials('rpitxApi');
+				const baseUrl = (creds.baseUrl as string).replace(/\/+$/, '');
 				const operation = this.getNodeParameter('operation', i) as string;
 
 				let method: IHttpRequestMethods = 'GET';

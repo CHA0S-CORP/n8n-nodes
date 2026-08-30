@@ -24,7 +24,6 @@
   "engines": {
     "node": ">=18.10"
   },
-  "main": "index.js",
   "scripts": {
     "build": "tsc && node ../../scripts/copy-icons.js",
     "dev": "tsc --watch",

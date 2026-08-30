@@ -16,6 +16,12 @@ interface ScanReply extends IDataObject {
 	sku: string;
 }
 
+/**
+ * Govee LAN control. NOTE: `scan()` and `getState()` bind the fixed protocol
+ * port 4002 to receive replies, so two of these running concurrently in the same
+ * process (parallel branches / two Govee nodes) will contend for that port and
+ * one may time out. Run LAN state/scan operations serially within a process.
+ */
 export class LanTransport implements GoveeTransport {
 	constructor(
 		private ctx: Ctx,
@@ -112,7 +118,10 @@ export class LanTransport implements GoveeTransport {
 
 			socket.on('error', (err) => finish(() => reject(err)));
 
-			socket.on('message', (buf) => {
+			socket.on('message', (buf, rinfo) => {
+				// The socket is bound to the shared RECV_PORT, so ignore replies from
+				// any other device that happens to broadcast a status at the same time.
+				if (rinfo.address !== device.id) return;
 				try {
 					const parsed = JSON.parse(buf.toString()) as { msg?: { cmd?: string; data?: IDataObject } };
 					if (parsed.msg?.cmd === 'devStatus') {

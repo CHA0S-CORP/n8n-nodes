@@ -45,6 +45,9 @@ export class SipAgentTrigger implements INodeType {
 				httpMethod: 'POST',
 				responseMode: 'onReceived',
 				path: 'webhook',
+				// Required so req.rawBody holds the exact received bytes; HMAC
+				// verification over a re-serialized body would not match the signature.
+				rawBody: true,
 			},
 		],
 		properties: [

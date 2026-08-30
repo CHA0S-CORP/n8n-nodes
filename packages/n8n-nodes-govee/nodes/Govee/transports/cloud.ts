@@ -27,16 +27,20 @@ export class CloudTransport implements GoveeTransport {
 		resource: string,
 		body?: IDataObject,
 	): Promise<IDataObject> {
+		let response: IDataObject;
 		try {
-			return (await this.ctx.helpers.httpRequestWithAuthentication.call(this.ctx, 'goveeApi', {
+			response = (await this.ctx.helpers.httpRequestWithAuthentication.call(this.ctx, 'goveeApi', {
 				method,
 				url: `${BASE_URL}${resource}`,
 				body,
 				json: true,
 			})) as IDataObject;
 		} catch (error) {
-			const statusCode = (error as { httpCode?: string; statusCode?: number }).statusCode;
-			if (statusCode === 429) {
+			const status = Number(
+				(error as { httpCode?: string; statusCode?: number }).httpCode ??
+					(error as { statusCode?: number }).statusCode,
+			);
+			if (status === 429) {
 				throw new NodeApiError(this.ctx.getNode(), error as JsonObject, {
 					message:
 						'Govee Cloud API rate limit hit (max 10 requests/minute per device, 10000/day).',
@@ -44,6 +48,15 @@ export class CloudTransport implements GoveeTransport {
 			}
 			throw new NodeApiError(this.ctx.getNode(), error as JsonObject);
 		}
+
+		// Govee returns HTTP 200 with an in-body `code` for logical failures
+		// (bad SKU, unsupported capability, offline device). Surface those as errors.
+		if (typeof response.code === 'number' && response.code !== 200) {
+			throw new NodeApiError(this.ctx.getNode(), response as JsonObject, {
+				message: `Govee API error ${response.code}: ${(response.message as string) ?? 'request failed'}`,
+			});
+		}
+		return response;
 	}
 
 	private async control(device: GoveeDevice, capability: CloudCapability): Promise<IDataObject> {

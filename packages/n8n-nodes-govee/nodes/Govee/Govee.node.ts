@@ -251,12 +251,22 @@ export class Govee implements INodeType {
 							const actions = coll.action ?? [];
 							const delay = this.getNodeParameter('actionDelay', i, 0) as number;
 							const applied: IDataObject[] = [];
-							for (let a = 0; a < actions.length; a++) {
-								const res = await applyAction(transport, this, device, actions[a]);
-								applied.push({ type: actions[a].type, result: res });
-								if (delay > 0 && a < actions.length - 1) {
-									await new Promise((r) => setTimeout(r, delay));
+							try {
+								for (let a = 0; a < actions.length; a++) {
+									const res = await applyAction(transport, this, device, actions[a]);
+									applied.push({ type: actions[a].type, result: res });
+									if (delay > 0 && a < actions.length - 1) {
+										await new Promise((r) => setTimeout(r, delay));
+									}
 								}
+							} catch (error) {
+								// Preserve which steps already succeeded before re-throwing, so a
+								// mid-list failure doesn't hide the applied actions.
+								(error as { context?: IDataObject }).context = {
+									device: device.id,
+									applied,
+								};
+								throw error;
 							}
 							result = { device: device.id, count: applied.length, actions: applied };
 							break;
@@ -272,8 +282,9 @@ export class Govee implements INodeType {
 					returnData.push({ json: result, pairedItem: { item: i } });
 				} catch (error) {
 					if (this.continueOnFail()) {
+						const ctx = (error as { context?: IDataObject }).context;
 						returnData.push({
-							json: { error: (error as Error).message },
+							json: { error: (error as Error).message, ...(ctx ? { ...ctx } : {}) },
 							pairedItem: { item: i },
 						});
 						continue;

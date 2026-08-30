@@ -22,6 +22,8 @@ export class IotTransport implements GoveeTransport {
 
 	private session?: IotSession;
 
+	private txSeq = 0;
+
 	constructor(
 		private ctx: Ctx,
 		private email: string,
@@ -45,17 +47,34 @@ export class IotTransport implements GoveeTransport {
 		return this.session;
 	}
 
+	/**
+	 * Attach persistent listeners so an async broker/network error has a handler
+	 * (an unhandled 'error' would crash the worker) and a dropped connection
+	 * forces a fresh connect on next use.
+	 */
+	private attach(client: MqttClient): MqttClient {
+		const drop = () => {
+			if (this.client === client) this.client = undefined;
+		};
+		client.on('error', drop);
+		client.on('close', drop);
+		return client;
+	}
+
 	private async getClient(): Promise<MqttClient> {
 		if (this.client) return this.client;
+		// Resolve the session outside the retry so a login failure (bad credentials)
+		// propagates as-is instead of triggering a second wasteful login attempt.
+		const session = await this.getSession();
 		try {
-			const session = await this.getSession();
-			this.client = await connectIot(session);
+			this.client = this.attach(await connectIot(session));
 			return this.client;
 		} catch (error) {
-			// Cert may be stale — re-auth once, then retry.
+			// Only reached if the MQTT connect itself failed — cert may be stale.
+			// Re-auth once and retry the connection.
 			invalidateIotSession(this.email);
-			const session = await this.getSession(true);
-			this.client = await connectIot(session);
+			const fresh = await this.getSession(true);
+			this.client = this.attach(await connectIot(fresh));
 			return this.client;
 		}
 	}
@@ -115,7 +134,7 @@ export class IotTransport implements GoveeTransport {
 	private async send(device: GoveeDevice, cmd: string, data: IDataObject): Promise<IDataObject> {
 		const client = await this.getClient();
 		const topic = this.topicFor(device);
-		const transaction = `v_${Date.now()}000`;
+		const transaction = `v_${Date.now()}_${this.txSeq++}`;
 		const message = {
 			msg: { cmd, data, cmdVersion: 0, transaction, type: 1 },
 		};
