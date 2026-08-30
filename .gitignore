@@ -8,3 +8,6 @@ npm-debug.log*
 # local test secrets
 .creds-import.json
 *.creds.json
+
+# local dev custom-extensions dir
+.n8ncustom/

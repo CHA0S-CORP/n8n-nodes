@@ -33,11 +33,17 @@ docker compose up --build       # rebuild after changing node code
 # open http://localhost:5678
 ```
 
-Or point a local n8n at the built package directories:
+Or point a local n8n at a single dir whose `node_modules` links every package.
+n8n loads all packages under one custom-extensions dir; a `;`-separated list of
+multiple dirs is unreliable (only one entry loads), so use one parent dir:
 
 ```bash
 npm run build
-export N8N_CUSTOM_EXTENSIONS="$PWD/packages/n8n-nodes-govee:$PWD/packages/n8n-nodes-rpitx:$PWD/packages/n8n-nodes-general-disarray"
+mkdir -p .n8ncustom/node_modules
+for p in n8n-nodes-govee n8n-nodes-rpitx n8n-nodes-general-disarray; do
+  ln -sf "$PWD/packages/$p" ".n8ncustom/node_modules/$p"
+done
+export N8N_CUSTOM_EXTENSIONS="$PWD/.n8ncustom"
 n8n start
 ```
 
