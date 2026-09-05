@@ -161,8 +161,10 @@ export const scheduleProperties: INodeProperties[] = [
 				displayName: 'Timezone',
 				name: 'timezone',
 				type: 'string',
-				default: 'America/Los_Angeles',
-				description: 'IANA timezone used to interpret At Time',
+				default: '',
+				placeholder: 'America/Los_Angeles',
+				description:
+					"IANA timezone used to interpret At Time. Leave empty to use the agent's configured timezone.",
 			},
 			{
 				displayName: 'Prefix',
@@ -191,7 +193,7 @@ export const scheduleProperties: INodeProperties[] = [
 				type: 'boolean',
 				default: false,
 				description:
-					'Whether the agent\'s LLM rewrites the composed message into natural spoken form at call time without dropping any information',
+					"Whether the agent's LLM rewrites the composed message into natural spoken form at call time without dropping any information",
 			},
 			{
 				displayName: 'Recurring',

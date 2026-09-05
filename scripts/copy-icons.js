@@ -1,6 +1,7 @@
 #!/usr/bin/env node
-/* Copy node icons (*.svg, *.png) from ./nodes into ./dist/nodes, preserving
- * structure. Zero dependencies; run from a package directory. */
+/* Copy node icons (*.svg, *.png) and codex files (*.node.json) from ./nodes
+ * into ./dist/nodes, preserving structure. tsc does not emit un-imported JSON.
+ * Zero dependencies; run from a package directory. */
 const fs = require('fs');
 const path = require('path');
 
@@ -18,7 +19,7 @@ function walk(dir, cb) {
 
 let count = 0;
 walk(SRC, (file) => {
-	if (!/\.(svg|png)$/i.test(file)) return;
+	if (!/(\.(svg|png)|\.node\.json)$/i.test(file)) return;
 	const rel = path.relative(SRC, file);
 	const target = path.join(DEST, rel);
 	fs.mkdirSync(path.dirname(target), { recursive: true });
@@ -26,4 +27,4 @@ walk(SRC, (file) => {
 	count++;
 });
 
-console.log(`copied ${count} icon(s) to ${path.relative(process.cwd(), DEST)}`);
+console.log(`copied ${count} asset(s) to ${path.relative(process.cwd(), DEST)}`);

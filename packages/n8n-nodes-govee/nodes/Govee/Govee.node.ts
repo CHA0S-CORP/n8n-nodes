@@ -249,7 +249,7 @@ export class Govee implements INodeType {
 								action?: ActionSpec[];
 							};
 							const actions = coll.action ?? [];
-							const delay = this.getNodeParameter('actionDelay', i, 0) as number;
+							const delay = this.getNodeParameter('actionDelay', i, 300) as number;
 							const applied: IDataObject[] = [];
 							try {
 								for (let a = 0; a < actions.length; a++) {
@@ -262,10 +262,8 @@ export class Govee implements INodeType {
 							} catch (error) {
 								// Preserve which steps already succeeded before re-throwing, so a
 								// mid-list failure doesn't hide the applied actions.
-								(error as { context?: IDataObject }).context = {
-									device: device.id,
-									applied,
-								};
+								const e = error as { context?: IDataObject };
+								e.context = { ...(e.context ?? {}), device: device.id, applied };
 								throw error;
 							}
 							result = { device: device.id, count: applied.length, actions: applied };

@@ -1,5 +1,5 @@
 {
-	"node": "n8n-nodes-base.rpitx",
+	"node": "n8n-nodes-rpitx.rpitx",
 	"nodeVersion": "1.0",
 	"codexVersion": "1.0",
 	"categories": ["Utility"],

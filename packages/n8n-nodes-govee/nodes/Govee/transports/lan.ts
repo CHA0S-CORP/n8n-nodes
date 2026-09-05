@@ -56,11 +56,24 @@ export class LanTransport implements GoveeTransport {
 		return new Promise((resolve, reject) => {
 			const socket = dgram.createSocket({ type: 'udp4', reuseAddr: true });
 			const found = new Map<string, ScanReply>();
+			let settled = false;
 
-			socket.on('error', (err) => {
+			// Single exit path: the socket must be closed exactly once, and the
+			// timer must not fire (and double-close) after an early error.
+			const finish = (fn: () => void) => {
+				if (settled) return;
+				settled = true;
+				clearTimeout(timer);
 				socket.close();
-				reject(err);
-			});
+				fn();
+			};
+
+			const timer = setTimeout(
+				() => finish(() => resolve([...found.values()])),
+				this.scanTimeoutMs,
+			);
+
+			socket.on('error', (err) => finish(() => reject(err)));
 
 			socket.on('message', (buf) => {
 				try {
@@ -78,17 +91,9 @@ export class LanTransport implements GoveeTransport {
 					JSON.stringify({ msg: { cmd: 'scan', data: { account_topic: 'reserve' } } }),
 				);
 				socket.send(scanMsg, SCAN_PORT, MULTICAST_ADDR, (err) => {
-					if (err) {
-						socket.close();
-						reject(err);
-					}
+					if (err) finish(() => reject(err));
 				});
 			});
-
-			setTimeout(() => {
-				socket.close();
-				resolve([...found.values()]);
-			}, this.scanTimeoutMs);
 		});
 	}
 
