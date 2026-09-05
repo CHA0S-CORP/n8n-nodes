@@ -13,6 +13,7 @@ import type { HttpRequest, IotSession } from './auth';
 import { connectIot, endClient, publishJson } from './client';
 
 const APP_VERSION = '6.8.00';
+const STATE_TIMEOUT_MS = 5000;
 const APP_UA = `GoveeHome/${APP_VERSION} (com.ihoment.GoVeeSensor; build:2; iOS 16.5.0) Alamofire/5.6.4`;
 
 type Ctx = IExecuteFunctions | ILoadOptionsFunctions;
@@ -131,22 +132,90 @@ export class IotTransport implements GoveeTransport {
 		return topic;
 	}
 
-	private async send(device: GoveeDevice, cmd: string, data: IDataObject): Promise<IDataObject> {
-		const client = await this.getClient();
+	private async publish(
+		client: MqttClient,
+		device: GoveeDevice,
+		cmd: string,
+		data: IDataObject,
+	): Promise<void> {
 		const topic = this.topicFor(device);
 		const transaction = `v_${Date.now()}_${this.txSeq++}`;
 		const message = {
 			msg: { cmd, data, cmdVersion: 0, transaction, type: 1 },
 		};
 		await publishJson(client, topic, message);
+	}
+
+	private async send(device: GoveeDevice, cmd: string, data: IDataObject): Promise<IDataObject> {
+		const client = await this.getClient();
+		await this.publish(client, device, cmd, data);
 		return { published: true, device: device.id, cmd, data };
 	}
 
+	/**
+	 * Request the device's state and wait for its reply. Devices answer on the
+	 * account-wide topic (shared by every device on the account), so replies are
+	 * matched by the `device` field rather than per-request correlation.
+	 */
 	async getState(device: GoveeDevice): Promise<IDataObject> {
-		// Fire a status request; replies arrive on the account topic asynchronously.
-		// We publish and report the request rather than block, since Govee's IoT
-		// status replies are not reliably correlated per-request.
-		return this.send(device, 'status', {});
+		const client = await this.getClient();
+		const session = await this.getSession();
+		const accountTopic = session.accountTopic;
+		// Resolve the device topic up front so a missing topic throws synchronously
+		// instead of inside the subscribe callback.
+		this.topicFor(device);
+		if (!accountTopic) {
+			await this.publish(client, device, 'status', {});
+			return {
+				published: true,
+				device: device.id,
+				note: 'Govee login returned no account topic; state reply could not be awaited.',
+			};
+		}
+
+		return new Promise<IDataObject>((resolve, reject) => {
+			let settled = false;
+			const finish = (fn: () => void) => {
+				if (settled) return;
+				settled = true;
+				clearTimeout(timer);
+				client.removeListener('message', onMessage);
+				client.unsubscribe(accountTopic, () => undefined);
+				fn();
+			};
+
+			const timer = setTimeout(
+				() =>
+					finish(() =>
+						reject(
+							new NodeOperationError(
+								this.ctx.getNode(),
+								`No IoT status reply from ${device.id} within ${STATE_TIMEOUT_MS} ms. Is the device online?`,
+							),
+						),
+					),
+				STATE_TIMEOUT_MS,
+			);
+
+			const onMessage = (topic: string, buf: Buffer) => {
+				if (topic !== accountTopic) return;
+				try {
+					const payload = JSON.parse(buf.toString()) as IDataObject;
+					const msg = (payload.msg as IDataObject | undefined) ?? {};
+					const from = (payload.device ?? msg.device) as string | undefined;
+					if (from !== device.id) return;
+					finish(() => resolve(payload));
+				} catch {
+					// not JSON / not for us
+				}
+			};
+
+			client.on('message', onMessage);
+			client.subscribe(accountTopic, { qos: 0 }, (err) => {
+				if (err) return finish(() => reject(err));
+				this.publish(client, device, 'status', {}).catch((e: Error) => finish(() => reject(e)));
+			});
+		});
 	}
 
 	async setPower(device: GoveeDevice, on: boolean): Promise<IDataObject> {

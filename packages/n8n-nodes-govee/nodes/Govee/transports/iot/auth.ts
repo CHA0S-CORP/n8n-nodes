@@ -33,9 +33,15 @@ function cacheKey(email: string): string {
 	return createHash('sha256').update(email.toLowerCase()).digest('hex');
 }
 
-/** uuid5(email, DNS) with dashes stripped — matches auth.py client id. */
+/**
+ * Deterministic per-email client id (stable across runs so the cached session
+ * and login stay consistent), namespaced to this package. govee2mqtt derives
+ * its id as uuid5(email) — using the same value would give both processes the
+ * same AWS IoT clientId, and AWS kicks the older session whenever a duplicate
+ * connects, so they would disconnect each other in a loop.
+ */
 function deriveClientId(email: string): string {
-	return uuidv5(email, uuidv5.DNS).replace(/-/g, '');
+	return uuidv5(`n8n-nodes-govee:${email.toLowerCase()}`, uuidv5.DNS).replace(/-/g, '');
 }
 
 /** Split a base64 PKCS#12 into PEM key + cert (port of extract_certificates). */
@@ -100,6 +106,8 @@ export async function getIotSession(
 	const client = login.client as IDataObject;
 	const token = client.token as string;
 	const accountId = String(client.accountId);
+	// Devices publish their state to this per-account topic (e.g. "GA/...").
+	const accountTopic = (client.topic as string) ?? '';
 
 	// 2. Fetch IoT key (p12) + endpoint
 	const iot = (await http({
@@ -118,9 +126,7 @@ export async function getIotSession(
 	})) as IDataObject;
 
 	if (iot.status !== 200) {
-		throw new Error(
-			`Govee iot/key failed: ${(iot.message as string) ?? JSON.stringify(iot)}`,
-		);
+		throw new Error(`Govee iot/key failed: ${(iot.message as string) ?? JSON.stringify(iot)}`);
 	}
 	const data = iot.data as IDataObject;
 	const { keyPem, certPem } = p12ToPem(data.p12 as string, data.p12Pass as string);
@@ -132,7 +138,7 @@ export async function getIotSession(
 		endpoint: data.endpoint as string,
 		certPem,
 		keyPem,
-		accountTopic: (data.log as string) ?? '',
+		accountTopic,
 		expiresAt: Date.now() + TTL_MS,
 	};
 	cache.set(key, session);

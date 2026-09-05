@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import { NodeOperationError } from 'n8n-workflow';
 import type {
 	IDataObject,
@@ -11,6 +12,31 @@ import type {
 import { rpitxProperties } from './descriptions';
 
 /**
+ * Build a single-file multipart/form-data body by hand. n8n's non-deprecated
+ * httpRequest helper takes a raw Buffer body, so this avoids the deprecated
+ * request-library `formData` path (slated for removal) without a dependency.
+ */
+function multipartFile(
+	field: string,
+	data: Buffer,
+	filename: string,
+	contentType: string,
+): { body: Buffer; contentType: string } {
+	const boundary = `----n8nRpitx${randomBytes(12).toString('hex')}`;
+	const safeName = filename.replace(/["\r\n]/g, '_');
+	const head = Buffer.from(
+		`--${boundary}\r\n` +
+			`Content-Disposition: form-data; name="${field}"; filename="${safeName}"\r\n` +
+			`Content-Type: ${contentType}\r\n\r\n`,
+	);
+	const tail = Buffer.from(`\r\n--${boundary}--\r\n`);
+	return {
+		body: Buffer.concat([head, data, tail]),
+		contentType: `multipart/form-data; boundary=${boundary}`,
+	};
+}
+
+/**
  * Upload a binary property from the current item to POST /api/upload and return
  * the host path the server stored it at (to feed back as audio_file/image_file).
  */
@@ -22,20 +48,31 @@ async function uploadBinary(
 ): Promise<string> {
 	const meta = ctx.helpers.assertBinaryData(i, prop);
 	const buffer = await ctx.helpers.getBinaryDataBuffer(i, prop);
-	const res = (await ctx.helpers.requestWithAuthentication.call(ctx, 'rpitxApi', {
+	const part = multipartFile(
+		'file',
+		buffer,
+		meta.fileName ?? 'upload.bin',
+		meta.mimeType || 'application/octet-stream',
+	);
+	// json:false so the Buffer body goes over the wire untouched; the server
+	// still answers JSON, so parse the response text ourselves.
+	const raw = await ctx.helpers.httpRequestWithAuthentication.call(ctx, 'rpitxApi', {
 		method: 'POST',
-		uri: `${baseUrl}/api/upload`,
-		formData: {
-			file: {
-				value: buffer,
-				options: {
-					filename: meta.fileName ?? 'upload.bin',
-					contentType: meta.mimeType,
-				},
-			},
-		},
-		json: true,
-	})) as IDataObject;
+		url: `${baseUrl}/api/upload`,
+		headers: { 'Content-Type': part.contentType },
+		body: part.body,
+		json: false,
+	});
+	let res: IDataObject;
+	if (typeof raw === 'string') {
+		try {
+			res = JSON.parse(raw) as IDataObject;
+		} catch {
+			res = { response: raw };
+		}
+	} else {
+		res = raw as IDataObject;
+	}
 	const uploadedPath = (res.path ?? res.file ?? res.filename) as string | undefined;
 	if (typeof uploadedPath !== 'string' || uploadedPath === '') {
 		throw new NodeOperationError(
@@ -93,7 +130,12 @@ export class Rpitx implements INodeType {
 						path = '/api/tx/pifmrds';
 						const audioFile =
 							(this.getNodeParameter('audioSource', i) as string) === 'upload'
-								? await uploadBinary(this, baseUrl, i, this.getNodeParameter('binaryProperty', i) as string)
+								? await uploadBinary(
+										this,
+										baseUrl,
+										i,
+										this.getNodeParameter('binaryProperty', i) as string,
+									)
 								: (this.getNodeParameter('audioFile', i) as string);
 						body = {
 							authorized: true,
@@ -123,7 +165,12 @@ export class Rpitx implements INodeType {
 						path = '/api/tx/pisstv';
 						const imageFile =
 							(this.getNodeParameter('imageSource', i) as string) === 'upload'
-								? await uploadBinary(this, baseUrl, i, this.getNodeParameter('binaryProperty', i) as string)
+								? await uploadBinary(
+										this,
+										baseUrl,
+										i,
+										this.getNodeParameter('binaryProperty', i) as string,
+									)
 								: (this.getNodeParameter('imageFile', i) as string);
 						body = {
 							authorized: true,
