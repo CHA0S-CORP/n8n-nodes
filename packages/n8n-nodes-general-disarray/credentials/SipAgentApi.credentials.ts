@@ -1,7 +1,9 @@
 import type {
-	IAuthenticateGeneric,
+	IAuthenticate,
+	ICredentialDataDecryptedObject,
 	ICredentialTestRequest,
 	ICredentialType,
+	IHttpRequestOptions,
 	INodeProperties,
 } from 'n8n-workflow';
 
@@ -54,18 +56,18 @@ export class SipAgentApi implements ICredentialType {
 
 	// Applied to the credential test below. The node's own requests build these
 	// headers by hand in GenericFunctions.ts (it needs the same logic for the raw
-	// binary /play upload), so the two must stay in step. An unset token yields
-	// empty headers, which the agent treats as absent — the supported tokenless mode.
-	authenticate: IAuthenticateGeneric = {
-		type: 'generic',
-		properties: {
-			headers: {
-				'X-API-Key':
-					'={{ $credentials.apiToken && $credentials.headerStyle !== "bearer" ? $credentials.apiToken : "" }}',
-				Authorization:
-					'={{ $credentials.apiToken && $credentials.headerStyle === "bearer" ? "Bearer " + $credentials.apiToken : "" }}',
-			},
-		},
+	// binary /play upload), so the two must stay in step. Only the selected header
+	// is sent; an unset token sends neither — the supported tokenless mode.
+	authenticate: IAuthenticate = async (
+		credentials: ICredentialDataDecryptedObject,
+		requestOptions: IHttpRequestOptions,
+	): Promise<IHttpRequestOptions> => {
+		const token = (credentials.apiToken as string | undefined) ?? '';
+		if (!token) return requestOptions;
+		const headers = { ...(requestOptions.headers ?? {}) };
+		if (credentials.headerStyle === 'bearer') headers.Authorization = `Bearer ${token}`;
+		else headers['X-API-Key'] = token;
+		return { ...requestOptions, headers };
 	};
 
 	// GET /schedule is token-protected but read-only, so it validates the base URL

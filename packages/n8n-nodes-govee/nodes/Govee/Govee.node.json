@@ -1,5 +1,5 @@
 {
-	"node": "n8n-nodes-base.govee",
+	"node": "n8n-nodes-govee.govee",
 	"nodeVersion": "1.0",
 	"codexVersion": "1.0",
 	"categories": ["Utility"],

@@ -168,7 +168,13 @@ export class Rpitx implements INodeType {
 				returnData.push({ json: response, pairedItem: { item: i } });
 			} catch (error) {
 				if (this.continueOnFail()) {
-					returnData.push({ json: { error: (error as Error).message }, pairedItem: { item: i } });
+					// NodeApiError puts the server's `detail` in .description and a generic
+					// status-code string in .message; surface the specific reason.
+					const e = error as { message: string; description?: string };
+					returnData.push({
+						json: { error: e.description ?? e.message },
+						pairedItem: { item: i },
+					});
 					continue;
 				}
 				throw error;

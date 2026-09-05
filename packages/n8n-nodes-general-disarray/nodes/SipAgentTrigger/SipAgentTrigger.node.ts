@@ -45,9 +45,9 @@ export class SipAgentTrigger implements INodeType {
 				httpMethod: 'POST',
 				responseMode: 'onReceived',
 				path: 'webhook',
-				// Required so req.rawBody holds the exact received bytes; HMAC
-				// verification over a re-serialized body would not match the signature.
-				rawBody: true,
+				// n8n's webhook middleware populates req.rawBody with the exact bytes
+				// received; HMAC verification below uses it and only falls back to a
+				// re-serialized body if it is absent.
 			},
 		],
 		properties: [
@@ -240,6 +240,18 @@ export class SipAgentTrigger implements INodeType {
 					const wantUrl = this.getNodeWebhookUrl('default');
 					if (entry.persistent && (!entry.callback_url || entry.callback_url === wantUrl)) {
 						return true;
+					}
+					// Drifted: remove it on the agent before forgetting the id, otherwise
+					// create() registers a second number and the old one keeps posting to
+					// the dead URL (and may hold the extension create() needs).
+					try {
+						await sipAgentApiRequest.call(
+							this,
+							'DELETE',
+							`/virtual-numbers/${encodeURIComponent(id)}`,
+						);
+					} catch {
+						// Already gone or agent unreachable — re-create regardless.
 					}
 				} catch {
 					// 404 (deleted / agent restarted without the file) → re-create.
